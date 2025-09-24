@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven Heaven Deluxe (Layout Fix)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1A1D24;
+            overflow-y: auto; /* Allow scroll on very small screens */
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 15% 25%, rgba(0, 168, 150, 0.15), transparent 40%),
+                        radial-gradient(circle at 85% 75%, rgba(78, 173, 229, 0.15), transparent 40%);
+            animation: subtle-gradient-move 20s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes subtle-gradient-move {
+            from { transform: translate(0, 0); }
+            to { transform: translate(20px, 30px); }
+        }
+
+        .pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop-in {
+            0% { opacity: 0; transform: scale(0.7); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .dice-roll { animation: dice-roll 0.5s ease-out; }
+        @keyframes dice-roll {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-15deg) scale(1.1); }
+            75% { transform: rotate(15deg) scale(1.1); }
+        }
+        
+        .combo-flash { animation: combo-flash 0.8s ease-out; }
+        @keyframes combo-flash {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.15); filter: brightness(2.5); }
+        }
+
+        .score-flash { animation: score-flash 0.5s ease-out; }
+        @keyframes score-flash {
+            0% { color: inherit; }
+            50% { color: #00A896; }
+            100% { color: inherit; }
+        }
+        
+        .modal { transition: opacity 0.25s ease, visibility 0.25s ease; }
+        .modal-content { transition: transform 0.25s ease; }
+        .modal.is-open { opacity: 1; visibility: visible; }
+        .modal.is-open .modal-content { transform: scale(1) translateY(0); }
+    </style>
+</head>
+<body class="text-[#E1E3E6] flex items-center justify-center min-h-screen p-4">
+
+    <audio id="audio-unlocker" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
+    <audio id="sound-place" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2b33951203.mp3" preload="auto"></audio>
+    <audio id="sound-roll" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_c898a9c682.mp3" preload="auto"></audio>
+    <audio id="sound-combo-3" src="https://cdn.pixabay.com/download/audio/2022/11/17/audio_821ff212c2.mp3" preload="auto"></audio>
+    <audio id="sound-combo-4" src="https://cdn.pixabay.com/download/audio/2022/10/13/audio_a40d583377.mp3" preload="auto"></audio>
+    <audio id="sound-combo-5" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_e56f8f0532.mp3" preload="auto"></audio>
+    <audio id="sound-combo-6" src="https://cdn.pixabay.com/download/audio/2022/08/16/audio_3c3b839540.mp3" preload="auto"></audio>
+    <audio id="sound-combo-7" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_c6d1d7318d.mp3" preload="auto"></audio>
+
+    <main id="game-container" class="w-full max-w-5xl mx-auto flex flex-col lg:flex-row gap-8 items-center lg:items-start">
+
+        <div class="w-full lg:w-2/3 flex flex-col gap-4">
+             <div class="flex justify-between items-center">
+                 <h1 class="text-5xl font-bold text-white">Seven Heaven</h1>
+                 <button id="help-btn" class="w-10 h-10 bg-[#232730] rounded-full text-2xl font-bold flex items-center justify-center transition hover:bg-[#00A896]">?</button>
+             </div>
+             <div class="p-2 md:p-4 border-4 border-[#3A414F] rounded-xl bg-[#1A1D24]/50 backdrop-blur-sm">
+                <div class="grid grid-cols-8 gap-1.5 md:gap-2">
+                    <div id="game-board" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2"></div>
+                    <div id="row-scores-display" class="col-span-1 grid grid-rows-7 gap-1.5 md:gap-2"></div>
+                    <div id="col-scores-display" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2 mt-1.5 md:mt-2"></div>
+                    <div class="col-span-1"></div> </div>
+            </div>
+        </div>
+
+        <div class="w-full lg:w-1/3 flex flex-col gap-4 p-6 bg-[#232730] rounded-xl self-stretch">
+             <div class="text-center">
+                 <h2 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">High Score</h2>
+                 <p id="high-score" class="text-4xl font-bold text-[#E6C340]">0</p>
+             </div>
+             
+             <div id="controls-area" class="py-4 my-2 border-y-2 border-[#3A414F]">
+                 </div>
+
+             <div class="text-center">
+                 <h2 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Total Score</h2>
+                 <p id="total-score" class="text-6xl font-bold text-white">0</p>
+             </div>
+              <hr class="border-[#3A414F]"/>
+              <div class="grid grid-cols-3 gap-4 text-center mt-2">
+                  <div>
+                      <h3 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Rows</h3>
+                      <p id="rows-total-score" class="text-2xl font-semibold">0</p>
+                  </div>
+                  <div>
+                      <h3 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Columns</h3>
+                      <p id="cols-total-score" class="text-2xl font-semibold">0</p>
+                  </div>
+                   <div>
+                      <h3 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Diagonal</h3>
+                      <p id="diag-total-score" class="text-2xl font-semibold">0</p>
+                  </div>
+              </div>
+        </div>
+    </main>
+
+    <div id="help-modal" class="modal fixed inset-0 bg-black/70 flex items-center justify-center p-4 opacity-0 invisible z-50">
+        <div class="modal-content w-full max-w-lg bg-[#232730] p-6 rounded-xl border border-[#3A414F] transform scale-95 -translate-y-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">How to Play Seven Heaven</h2>
+                <button id="close-help-btn" class="w-8 h-8 rounded-full text-lg transition hover:bg-[#3A414F]">X</button>
+            </div>
+            <div class="space-y-4 text-gray-300 text-sm md:text-base max-h-[70vh] overflow-y-auto pr-2">
+                <div>
+                    <h3 class="font-bold text-white text-lg mb-1">The Objective</h3>
+                    <p>The goal is to get the highest score possible by strategically placing symbols on the grid to create sequences of 3 or more identical symbols in a line.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-lg mb-1">Gameplay Flow</h3>
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li><strong>Start the Game:</strong> First, choose a symbol from the available options to place in the highlighted top-left corner of the grid.</li>
+                        <li><strong>Take Your Turn:</strong> Click the "Roll Dice" button. You will be given two random symbols to place on the board.</li>
+                        <li><strong>Place Your Symbols:</strong> You must place both symbols on the board in empty squares that are adjacent to each other (either horizontally or vertically). You cannot place them diagonally from each other. Click an empty square for the first symbol, then an adjacent empty square for the second.</li>
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-lg mb-1">Scoring System</h3>
+                    <p class="mb-2">Points are awarded for any horizontal or vertical line of three or more identical, adjacent symbols:</p>
+                    <ul class="list-disc list-inside space-y-1 pl-2">
+                        <li><strong>3 Symbols</strong> in a line = 3 points</li>
+                        <li><strong>4 Symbols</strong> in a line = 8 points</li>
+                        <li><strong>5 Symbols</strong> in a line = 10 points</li>
+                        <li><strong>6 Symbols</strong> in a line = 14 points</li>
+                        <li><strong>7 Symbols</strong> in a line = 20 points</li>
+                    </ul>
+                    <p class="mt-3 p-3 bg-teal-900/50 rounded-md border border-teal-500/30">
+                        <strong class="text-teal-300">⭐ Diagonal Bonus:</strong> The score for any sequence on the specially colored diagonal line (top-right to bottom-left) is <em>doubled!</em> This is key to a high score.
+                    </p>
+                    <p class="mt-3 p-3 bg-red-900/50 rounded-md border border-red-500/30">
+                        <strong class="text-red-300">Penalty:</strong> Be careful! Any row or column that does not have at least one scoring sequence of 3 or more symbols will receive a <strong>-5 point penalty</strong>.
+                    </p>
+                </div>
+                 <div>
+                    <h3 class="font-bold text-white text-lg mb-1">End of the Game</h3>
+                    <p>The game ends when the entire grid is filled with symbols. Your final score is the sum of all your row scores, column scores, and the doubled diagonal score.</p>
+                </div>
+            </div>
+            </div>
+    </div>
+    <div id="game-over-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50">
+        <div class="modal-content w-full max-w-md text-center bg-[#1A1D24] p-8 rounded-xl border-2 border-[#00A896] transform scale-95 -translate-y-4">
+             <h2 class="text-4xl font-bold text-[#00A896]">Game Over!</h2>
+             <p class="text-[#8A93A2] mt-4">Your final score is:</p>
+             <p id="final-score-modal" class="text-7xl font-bold text-white my-4">0</p>
+             <p class="text-[#8A93A2]">Your high score: <span id="high-score-modal" class="text-[#E6C340]">0</span></p>
+             <button id="play-again-btn" class="w-full mt-8 bg-[#00A896] text-white font-bold py-3 px-4 rounded-lg text-xl transition-all duration-200 ease-in-out hover:bg-[#00C2A9] hover:scale-105 active:scale-98">Play Again</button>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Game constants
+    const SYMBOLS = ['@', '^', '+', '*', '&', '~'];
+    const SYMBOL_COLORS = {'@': 'text-[#E6C340]', '^': 'text-[#A484E9]', '+': 'text-[#4FB477]', '*': 'text-[#E36A7F]', '&': 'text-[#4EADE5]', '~': 'text-[#E38A5F]'};
+    const SCORING_RULES = { 7: 20, 6: 14, 5: 10, 4: 8, 3: 3 };
+    const GRID_SIZE = 7;
+
+    // State variables
+    let gameState, gridData, currentRoll, firstPlacementCell, turnCount, audioUnlocked, highScore;
+
+    // DOM Elements
+    const DOMElements = {
+        gameBoard: document.getElementById('game-board'),
+        controlsArea: document.getElementById('controls-area'),
+        rowScoresDisplay: document.getElementById('row-scores-display'),
+        colScoresDisplay: document.getElementById('col-scores-display'),
+        totalScore: document.getElementById('total-score'),
+        highScore: document.getElementById('high-score'),
+        rowsTotalScore: document.getElementById('rows-total-score'),
+        colsTotalScore: document.getElementById('cols-total-score'),
+        diagTotalScore: document.getElementById('diag-total-score'),
+        helpBtn: document.getElementById('help-btn'),
+        helpModal: document.getElementById('help-modal'),
+        closeHelpBtn: document.getElementById('close-help-btn'),
+        gameOverModal: document.getElementById('game-over-modal'),
+        finalScoreModal: document.getElementById('final-score-modal'),
+        highScoreModal: document.getElementById('high-score-modal'),
+        playAgainBtn: document.getElementById('play-again-btn')
+    };
+
+    function initGame() {
+        gameState = 'PRE_GAME';
+        gridData = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+        currentRoll = [];
+        firstPlacementCell = null;
+        turnCount = 0;
+        highScore = localStorage.getItem('sevenHeavenHighScore') || 0;
+        DOMElements.highScore.textContent = highScore;
+        DOMElements.gameOverModal.classList.remove('is-open');
+        renderGrid();
+        renderScorePlaceholders();
+        renderControls();
+        calculateAllScores();
+    }
+    
+    // --- RENDER FUNCTIONS ---
+    function renderGrid() {
+        DOMElements.gameBoard.innerHTML = '';
+        for (let r = 0; r < GRID_SIZE; r++) {
+            for (let c = 0; c < GRID_SIZE; c++) {
+                const cell = document.createElement('div');
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+                let baseClasses = 'aspect-square w-full bg-[#232730] rounded-md md:rounded-lg flex items-center justify-center text-xl sm:text-2xl md:text-3xl font-bold transition-all duration-200';
+                if (r + c === GRID_SIZE - 1) baseClasses = baseClasses.replace('bg-[#232730]', 'bg-[#444c5a]');
+                if (r === 0 && c === 0) baseClasses += ' border-2 border-[#00A896]';
+                else baseClasses += ' border border-[#3A414F]';
+                cell.className = baseClasses;
+                const symbol = gridData[r][c];
+                if (symbol) {
+                    cell.textContent = symbol;
+                    cell.classList.add(SYMBOL_COLORS[symbol], 'pop-in');
+                }
+                DOMElements.gameBoard.appendChild(cell);
+            }
+        }
+    }
+
+    function renderScorePlaceholders() {
+        DOMElements.rowScoresDisplay.innerHTML = '';
+        DOMElements.colScoresDisplay.innerHTML = '';
+        for (let i = 0; i < GRID_SIZE; i++) {
+            DOMElements.rowScoresDisplay.innerHTML += `<div id="row-score-${i}" class="aspect-square w-full flex items-center justify-center font-semibold text-lg text-[#8A93A2] bg-[#232730] rounded-md">0</div>`;
+            DOMElements.colScoresDisplay.innerHTML += `<div id="col-score-${i}" class="aspect-square w-full flex items-center justify-center font-semibold text-lg text-[#8A93A2] bg-[#232730] rounded-md">0</div>`;
+        }
+    }
+
+    function renderControls() {
+        DOMElements.controlsArea.innerHTML = ''; 
+        if (gameState === 'PRE_GAME') {
+            const container = document.createElement('div');
+            const title = document.createElement('h2');
+            title.className = 'text-sm font-medium text-[#8A93A2] uppercase tracking-widest text-center mb-2';
+            title.textContent = 'Choose Start Symbol';
+            container.appendChild(title);
+
+            const selector = document.createElement('div');
+            selector.className = 'grid grid-cols-6 gap-2 w-full';
+            SYMBOLS.forEach(symbol => {
+                const btn = document.createElement('button');
+                btn.className = `w-full h-12 bg-[#1A1D24] rounded-lg flex items-center justify-center text-2xl font-bold transition-all duration-200 hover:bg-[#3A414F] hover:border-[#00A896] border-2 border-transparent`;
+                btn.textContent = symbol;
+                btn.classList.add(SYMBOL_COLORS[symbol]);
+                btn.onclick = () => handleSymbolSelect(symbol);
+                selector.appendChild(btn);
+            });
+            container.appendChild(selector);
+            DOMElements.controlsArea.appendChild(container);
+        } else {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'w-full flex flex-col items-center gap-4';
+
+            const diceContainer = document.createElement('div');
+            diceContainer.className = 'text-center';
+            diceContainer.innerHTML = `<h2 class="text-sm font-medium text-[#8A93A2] uppercase tracking-widest mb-2">Your Roll</h2>`;
+            const diceFlex = document.createElement('div');
+            diceFlex.className = 'flex gap-2';
+            diceFlex.innerHTML = `
+                <div id="dice-1" class="w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold">?</div>
+                <div id="dice-2" class="w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold">?</div>`;
+            diceContainer.appendChild(diceFlex);
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'flex gap-2';
+            
+            const rollBtn = document.createElement('button');
+            rollBtn.id = 'roll-dice-btn';
+            rollBtn.className = 'w-32 bg-[#00A896] text-white font-medium py-2 px-4 rounded-lg text-base transition-all duration-200 ease-in-out hover:bg-[#00C2A9] hover:scale-103 active:scale-98 disabled:bg-[#3A414F] disabled:text-[#8A93A2] disabled:cursor-not-allowed disabled:scale-100';
+            rollBtn.textContent = 'Roll Dice';
+            rollBtn.onclick = handleRollDice;
+
+            const newGameBtn = document.createElement('button');
+            newGameBtn.id = 'new-game-btn';
+            newGameBtn.className = 'w-32 bg-[#3A414F] text-[#E1E3E6] font-medium py-2 px-4 rounded-lg text-base transition-all duration-200 ease-in-out hover:bg-[#4a5263]';
+            newGameBtn.textContent = 'New Game';
+            newGameBtn.onclick = initGame;
+
+            buttonContainer.appendChild(rollBtn);
+            buttonContainer.appendChild(newGameBtn);
+            
+            wrapper.appendChild(diceContainer);
+            wrapper.appendChild(buttonContainer);
+            DOMElements.controlsArea.appendChild(wrapper);
+            
+            updateControlsState();
+        }
+    }
+    
+    function updateControlsState() {
+        if (gameState === 'PRE_GAME') return;
+        const rollBtn = document.getElementById('roll-dice-btn');
+        if (rollBtn) rollBtn.disabled = gameState !== 'AWAITING_ROLL';
+        
+        const dice1 = document.getElementById('dice-1');
+        const dice2 = document.getElementById('dice-2');
+        if (!dice1 || !dice2) return;
+        
+        if (gameState === 'AWAITING_PLACEMENT') {
+            dice1.textContent = currentRoll[0];
+            dice1.className = `w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold border-2 border-[#00A896] ${SYMBOL_COLORS[currentRoll[0]]}`;
+            dice2.textContent = currentRoll[1];
+            dice2.className = `w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold border-2 border-[#00A896] ${SYMBOL_COLORS[currentRoll[1]]}`;
+        } else {
+            dice1.textContent = '?';
+            dice1.className = 'w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold';
+            dice2.textContent = '?';
+            dice2.className = 'w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold';
+        }
+    }
+
+    // --- GAME LOGIC & HANDLERS ---
+    function handleSymbolSelect(symbol) {
+        if (gameState !== 'PRE_GAME') return;
+        unlockAudio();
+        gridData[0][0] = symbol;
+        gameState = 'AWAITING_ROLL';
+        renderGrid();
+        renderControls();
+        calculateAllScores();
+    }
+    
+    function handleRollDice() {
+        if (gameState !== 'AWAITING_ROLL') return;
+        gameState = 'ANIMATING_ROLL';
+        updateControlsState();
+        playSound('sound-roll');
+
+        const dice1El = document.getElementById('dice-1');
+        const dice2El = document.getElementById('dice-2');
+        dice1El.classList.add('dice-roll');
+        dice2El.classList.add('dice-roll');
+
+        setTimeout(() => {
+            dice1El.classList.remove('dice-roll');
+            dice2El.classList.remove('dice-roll');
+            currentRoll = [SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)], SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]];
+            gameState = 'AWAITING_PLACEMENT';
+            updateControlsState();
+        }, 500);
+    }
+    
+    async function handleCellClick(e) {
+        const cell = e.target.closest('[data-row]');
+        if (gameState !== 'AWAITING_PLACEMENT' || !cell) return;
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+
+        if (firstPlacementCell) {
+            const { r, c } = firstPlacementCell;
+            const isAdjacent = Math.abs(r - row) + Math.abs(c - col) === 1;
+            if (isAdjacent && !gridData[row][col]) {
+                gridData[row][col] = currentRoll[1];
+                firstPlacementCell = null;
+                turnCount++;
+                clearHighlights();
+                renderGrid();
+                playSound('sound-place');
+                await processTurnEnd();
+            }
+        } else {
+            if (!gridData[row][col]) {
+                gridData[row][col] = currentRoll[0];
+                firstPlacementCell = { r: row, c: col };
+                renderGrid();
+                highlightValidMoves(row, col);
+            }
+        }
+    }
+
+    async function processTurnEnd() {
+        await calculateAllScores();
+        if (turnCount >= (GRID_SIZE * GRID_SIZE - 1) / 2) {
+            endGame();
+        } else {
+            gameState = 'AWAITING_ROLL';
+            renderControls();
+        }
+    }
+    
+    function endGame() {
+        gameState = 'GAME_OVER';
+        const finalScore = parseInt(DOMElements.totalScore.textContent);
+        if (finalScore > highScore) {
+            highScore = finalScore;
+            localStorage.setItem('sevenHeavenHighScore', highScore);
+            DOMElements.highScore.textContent = highScore;
+        }
+        DOMElements.finalScoreModal.textContent = finalScore;
+        DOMElements.highScoreModal.textContent = highScore;
+        DOMElements.gameOverModal.classList.add('is-open');
+    }
+
+    // --- SCORING & UTILITIES ---
+    function calculateLine(line) {
+        let score = 0, foundSequence = false;
+        let tempLine = [...line];
+        for (let len = 7; len >= 3; len--) {
+            for (let i = 0; i <= tempLine.length - len; i++) {
+                const slice = tempLine.slice(i, i + len);
+                if (slice[0] !== null && slice.every(s => s && s === slice[0])) {
+                    score += SCORING_RULES[len];
+                    foundSequence = true;
+                    for (let j = 0; j < len; j++) tempLine[i + j] = null;
+                }
+            }
+        }
+        return { score: foundSequence ? score : -5 };
+    }
+    
+    function calculateAllScores() {
+        return new Promise(resolve => {
+            let totalScore = 0;
+            let totalScores = { rows: 0, cols: 0, diag: 0 };
+            for (let i = 0; i < GRID_SIZE; i++) {
+                const { score } = calculateLine(gridData[i]);
+                updateScoreElement(`row-score-${i}`, score);
+                totalScores.rows += score;
+            }
+            for (let i = 0; i < GRID_SIZE; i++) {
+                const colLine = gridData.map(row => row[i]);
+                const { score } = calculateLine(colLine);
+                updateScoreElement(`col-score-${i}`, score);
+                totalScores.cols += score;
+            }
+            const diagLine = Array.from({ length: GRID_SIZE }, (_, i) => gridData[i][GRID_SIZE - 1 - i]);
+            const { score: diagBaseScore } = calculateLine(diagLine);
+            totalScores.diag = diagBaseScore * 2;
+            totalScore = totalScores.rows + totalScores.cols + totalScores.diag;
+            DOMElements.totalScore.textContent = totalScore;
+            DOMElements.rowsTotalScore.textContent = totalScores.rows;
+            DOMElements.colsTotalScore.textContent = totalScores.cols;
+            DOMElements.diagTotalScore.textContent = totalScores.diag;
+            resolve();
+        });
+    }
+
+    function updateScoreElement(id, score) {
+        const el = document.getElementById(id);
+        if (el && el.textContent != score) {
+            el.textContent = score;
+            el.classList.toggle('text-red-400', score < 0);
+            el.classList.toggle('text-[#8A93A2]', score >= 0);
+            el.classList.add('score-flash');
+            setTimeout(() => el.classList.remove('score-flash'), 500);
+        }
+    }
+
+    function highlightValidMoves(row, col) {
+        [[ -1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => {
+            const r = row + dr, c = col + dc;
+            const cell = DOMElements.gameBoard.querySelector(`[data-row='${r}'][data-col='${c}']`);
+            if (cell && !gridData[r][c]) cell.classList.add('bg-[#3A414F]');
+        });
+    }
+
+    function clearHighlights() {
+        DOMElements.gameBoard.querySelectorAll('[data-row]').forEach(cell => {
+             cell.classList.remove('bg-[#3A414F]');
+        });
+    }
+    
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        document.getElementById('audio-unlocker').play().then(() => audioUnlocked = true).catch(() => {});
+    }
+
+    function playSound(id) {
+        if (!audioUnlocked) return;
+        const sound = document.getElementById(id);
+        if (sound) { sound.currentTime = 0; sound.play().catch(e => {}); }
+    }
+
+    // --- EVENT LISTENERS ---
+    DOMElements.helpBtn.onclick = () => DOMElements.helpModal.classList.add('is-open');
+    DOMElements.closeHelpBtn.onclick = () => DOMElements.helpModal.classList.remove('is-open');
+    DOMElements.playAgainBtn.onclick = initGame;
+    DOMElements.gameBoard.onclick = handleCellClick;
+    
+    initGame();
+});
+</script>
+
+</body>
+</html>
