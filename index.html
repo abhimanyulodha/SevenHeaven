@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seven Heaven Deluxe (Corrected)</title>
+    <title>Seven Heaven Deluxe (Layout Fix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        html {
-            height: 100%;
-        }
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #0d0f18;
-            background-image: 
-                radial-gradient(at 20% 20%, hsla(212,45%,15%,1) 0px, transparent 50%),
-                radial-gradient(at 80% 20%, hsla(266,45%,15%,1) 0px, transparent 50%),
-                radial-gradient(at 20% 80%, hsla(314,45%,15%,1) 0px, transparent 50%),
-                radial-gradient(at 80% 80%, hsla(180,45%,15%,1) 0px, transparent 50%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 1rem;
+            background-color: #1A1D24;
+            overflow-y: auto; /* Allow scroll on very small screens */
         }
+        
         body::before {
-           display: none;
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 15% 25%, rgba(0, 168, 150, 0.15), transparent 40%),
+                        radial-gradient(circle at 85% 75%, rgba(78, 173, 229, 0.15), transparent 40%);
+            animation: subtle-gradient-move 20s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes subtle-gradient-move {
+            from { transform: translate(0, 0); }
+            to { transform: translate(20px, 30px); }
         }
 
         .pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -62,7 +62,7 @@
         .modal.is-open .modal-content { transform: scale(1) translateY(0); }
     </style>
 </head>
-<body class="text-[#E1E3E6]">
+<body class="text-[#E1E3E6] flex items-center justify-center min-h-screen p-4">
 
     <audio id="audio-unlocker" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
     <audio id="sound-place" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2b33951203.mp3" preload="auto"></audio>
@@ -85,8 +85,7 @@
                     <div id="game-board" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2"></div>
                     <div id="row-scores-display" class="col-span-1 grid grid-rows-7 gap-1.5 md:gap-2"></div>
                     <div id="col-scores-display" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2 mt-1.5 md:mt-2"></div>
-                    <div class="col-span-1"></div> 
-                </div>
+                    <div class="col-span-1"></div> </div>
             </div>
         </div>
 
@@ -97,7 +96,7 @@
              </div>
              
              <div id="controls-area" class="py-4 my-2 border-y-2 border-[#3A414F]">
-             </div>
+                 </div>
 
              <div class="text-center">
                  <h2 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Total Score</h2>
