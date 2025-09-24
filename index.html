@@ -9,57 +9,41 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ADD THE NEW THEME STYLES HERE */
+        html {
+            height: 100%;
+        }
+        body {
+            /* This is the new background */
+            background-color: #0d0f18;
+            background-image: 
+                radial-gradient(at 20% 20%, hsla(212,45%,15%,1) 0px, transparent 50%),
+                radial-gradient(at 80% 20%, hsla(266,45%,15%,1) 0px, transparent 50%),
+                radial-gradient(at 20% 80%, hsla(314,45%,15%,1) 0px, transparent 50%),
+                radial-gradient(at 80% 80%, hsla(180,45%,15%,1) 0px, transparent 50%);
+            
+            /* This makes sure the game stays centered */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        /* --- This is the old body style from before. You can leave it or delete it --- */
+        /*
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #1A1D24;
-            overflow-y: auto; /* Allow scroll on very small screens */
+            overflow-y: auto; 
         }
-        
+        */
+
         body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle at 15% 25%, rgba(0, 168, 150, 0.15), transparent 40%),
-                        radial-gradient(circle at 85% 75%, rgba(78, 173, 229, 0.15), transparent 40%);
-            animation: subtle-gradient-move 20s ease-in-out infinite alternate;
-            z-index: -1;
+            /* We are replacing this with the new background, so you can delete it */
+            display: none; 
         }
-
-        @keyframes subtle-gradient-move {
-            from { transform: translate(0, 0); }
-            to { transform: translate(20px, 30px); }
-        }
-
-        .pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes pop-in {
-            0% { opacity: 0; transform: scale(0.7); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .dice-roll { animation: dice-roll 0.5s ease-out; }
-        @keyframes dice-roll {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(-15deg) scale(1.1); }
-            75% { transform: rotate(15deg) scale(1.1); }
-        }
-        
-        .combo-flash { animation: combo-flash 0.8s ease-out; }
-        @keyframes combo-flash {
-            0%, 100% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.15); filter: brightness(2.5); }
-        }
-
-        .score-flash { animation: score-flash 0.5s ease-out; }
-        @keyframes score-flash {
-            0% { color: inherit; }
-            50% { color: #00A896; }
-            100% { color: inherit; }
-        }
-        
-        .modal { transition: opacity 0.25s ease, visibility 0.25s ease; }
-        .modal-content { transition: transform 0.25s ease; }
-        .modal.is-open { opacity: 1; visibility: visible; }
-        .modal.is-open .modal-content { transform: scale(1) translateY(0); }
+        /* ... rest of your existing game styles ... */
     </style>
 </head>
 <body class="text-[#E1E3E6] flex items-center justify-center min-h-screen p-4">
