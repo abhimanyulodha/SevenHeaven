@@ -56,6 +56,15 @@
         .modal-content { transition: transform 0.25s ease; }
         .modal.is-open { opacity: 1; visibility: visible; }
         .modal.is-open .modal-content { transform: scale(1) translateY(0); }
+
+        /* --- CHANGE: Added shake animation for invalid moves --- */
+        .invalid-move-shake { animation: invalid-move-shake 0.4s cubic-bezier(.36,.07,.19,.97); }
+        @keyframes invalid-move-shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-3px); }
+            40%, 60% { transform: translateX(3px); }
+        }
     </style>
 </head>
 <body class="text-[#E1E3E6] flex items-center justify-center min-h-screen p-4">
@@ -187,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const SYMBOLS = Object.values(ANIMAL_SYMBOLS);
 
-    // --- CHANGE: Assigned a unique color to the Tiger ---
     const SYMBOL_COLORS = {
         '🐶': 'text-[#f4a261]', // Pup - Sandy Brown
         '🐱': 'text-[#e76f51]', // Kitten - Burnt Sienna
@@ -262,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const symbol = gridData[r][c];
                 if (symbol) {
                     cell.textContent = symbol;
-                    // --- CHANGE: Applied the correct color class to the grid symbol ---
                     cell.classList.add(SYMBOL_COLORS[symbol], 'pop-in');
                 }
                 DOMElements.gameBoard.appendChild(cell);
@@ -432,6 +439,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             if (!gridData[row][col]) {
+                // --- CHANGE: Logic to prevent placing first symbol in an isolated cell ---
+                const neighbors = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                const hasValidNeighbor = neighbors.some(([dr, dc]) => {
+                    const r = row + dr;
+                    const c = col + dc;
+                    return r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && !gridData[r][c];
+                });
+
+                if (!hasValidNeighbor) {
+                    cell.classList.add('invalid-move-shake');
+                    setTimeout(() => cell.classList.remove('invalid-move-shake'), 400);
+                    return; // Abort placement
+                }
+                // --- END CHANGE ---
+
                 gridData[row][col] = currentRoll[0];
                 firstPlacementCell = { r: row, c: col };
                 renderGrid();
