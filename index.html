@@ -14,7 +14,7 @@
             background-color: #1A1D24;
             overflow-y: auto;
         }
-        
+
         body::before {
             content: '';
             position: fixed;
@@ -24,18 +24,15 @@
             animation: subtle-gradient-move 20s ease-in-out infinite alternate;
             z-index: -1;
         }
-
         @keyframes subtle-gradient-move {
             from { transform: translate(0, 0); }
             to { transform: translate(20px, 30px); }
         }
-
         .pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes pop-in {
             0% { opacity: 0; transform: scale(0.7); }
             100% { opacity: 1; transform: scale(1); }
         }
-
         .dice-tumble { animation: dice-tumble 0.6s ease-in-out; }
         @keyframes dice-tumble {
             0%   { transform: rotate(0deg) scale(1); }
@@ -44,19 +41,18 @@
             60%  { transform: rotate(-270deg) scale(1.1); }
             100% { transform: rotate(-360deg) scale(1); }
         }
-        
+
         .score-flash { animation: score-flash 0.5s ease-out; }
         @keyframes score-flash {
             0% { color: inherit; }
             50% { color: #00A896; }
             100% { color: inherit; }
         }
-        
+
         .modal { transition: opacity 0.25s ease, visibility 0.25s ease; }
         .modal-content { transition: transform 0.25s ease; }
         .modal.is-open { opacity: 1; visibility: visible; }
         .modal.is-open .modal-content { transform: scale(1) translateY(0); }
-
         /* --- CHANGE: Added shake animation for invalid moves --- */
         .invalid-move-shake { animation: invalid-move-shake 0.4s cubic-bezier(.36,.07,.19,.97); }
         @keyframes invalid-move-shake {
@@ -65,10 +61,57 @@
             30%, 50%, 70% { transform: translateX(-3px); }
             40%, 60% { transform: translateX(3px); }
         }
+
+        /* --- NEW: Pulse animation for Roll Dice button --- */
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+        #roll-dice-btn:not(:disabled) {
+          animation: pulse 1.5s infinite;
+        }
+
+        /* --- NEW: Subtle grid background pattern --- */
+        #game-board {
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* --- NEW: Rounded corners for score display cells --- */
+        #row-scores-display > div,
+        #col-scores-display > div {
+            border-radius: 0.5rem;
+        }
+
+        /* --- NEW: Vibrant color for diagonal line --- */
+        [data-row][data-col].diagonal-cell {
+            background-color: rgba(255, 215, 0, 0.2);
+        }
+
+        /* --- NEW: Confetti effect for high combos --- */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* --- NEW: Animated score roll-up --- */
+        @keyframes roll-up {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .score-roll-up {
+            animation: roll-up 0.5s ease-out;
+        }
     </style>
 </head>
 <body class="text-[#E1E3E6] flex items-center justify-center min-h-screen p-4">
-
     <audio id="audio-unlocker" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
     <audio id="sound-place" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2b33951203.mp3" preload="auto"></audio>
     <audio id="sound-roll" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_c898a9c682.mp3" preload="auto"></audio>
@@ -77,9 +120,7 @@
     <audio id="sound-combo-5" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_e56f8f0532.mp3" preload="auto"></audio>
     <audio id="sound-combo-6" src="https://cdn.pixabay.com/download/audio/2022/08/16/audio_3c3b839540.mp3" preload="auto"></audio>
     <audio id="sound-combo-7" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_c6d1d7318d.mp3" preload="auto"></audio>
-
     <main id="game-container" class="w-full max-w-5xl mx-auto flex flex-col lg:flex-row gap-8 items-center lg:items-start">
-
         <div class="w-full lg:w-2/3 flex flex-col gap-4">
             <div class="flex justify-between items-center">
                 <h1 class="text-5xl font-bold text-white">Seven Heaven</h1>
@@ -90,20 +131,18 @@
                     <div id="game-board" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2"></div>
                     <div id="row-scores-display" class="col-span-1 grid grid-rows-7 gap-1.5 md:gap-2"></div>
                     <div id="col-scores-display" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2 mt-1.5 md:mt-2"></div>
-                    <div class="col-span-1"></div> 
+                    <div class="col-span-1"></div>
                 </div>
             </div>
         </div>
-
         <div class="w-full lg:w-1/3 flex flex-col gap-4 p-6 bg-[#232730] rounded-xl self-stretch">
             <div class="text-center">
                 <h2 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">High Score</h2>
                 <p id="high-score" class="text-4xl font-bold text-[#E6C340]">0</p>
             </div>
-            
+
             <div id="controls-area" class="py-4 my-2 border-y-2 border-[#3A414F]">
             </div>
-
             <div class="text-center">
                 <h2 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Total Score</h2>
                 <p id="total-score" class="text-6xl font-bold text-white">0</p>
@@ -120,7 +159,7 @@
                  </div>
                  <div>
                      <h3 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Diagonal</h3>
-                     <p id="diag-total-score" class="text-2xl font-semibold">0</p>
+                     <p id="diag-total-score" class="text-2xl font-semibold">0 <span class="text-[#FFD700]">✧</span></p>
                  </div>
              </div>
              <div class="text-center mt-4 border-t-2 border-[#3A414F] pt-4">
@@ -129,7 +168,6 @@
              </div>
         </div>
     </main>
-
     <div id="help-modal" class="modal fixed inset-0 bg-black/70 flex items-center justify-center p-4 opacity-0 invisible z-50">
         <div class="modal-content w-full max-w-lg bg-[#232730] p-6 rounded-xl border border-[#3A414F] transform scale-95 -translate-y-4">
             <div class="flex justify-between items-center mb-4">
@@ -142,7 +180,7 @@
                     <p>The goal is to get the highest score possible by strategically placing symbols on the grid to create sequences of 3 or more identical symbols in a line.</p>
                 </div>
                 <div>
-                    <h3 class="font-bold text-white text-lg mb-1">Gameplay Flow</h3>
+                    <h3 class="font-bold text-white text-lg mb-1">🎲 Gameplay Flow</h3>
                     <ol class="list-decimal list-inside space-y-2">
                         <li><strong>Start the Game:</strong> First, choose a symbol from the available options to place in the highlighted top-left corner of the grid.</li>
                         <li><strong>Take Your Turn:</strong> Click the "Roll Dice" button. You will be given two random symbols to place on the board.</li>
@@ -150,7 +188,7 @@
                     </ol>
                 </div>
                 <div>
-                    <h3 class="font-bold text-white text-lg mb-1">Scoring System</h3>
+                    <h3 class="font-bold text-white text-lg mb-1">📜 Scoring System</h3>
                     <p class="mb-2">Points are awarded for any horizontal or vertical line of three or more identical, adjacent symbols:</p>
                     <ul class="list-disc list-inside space-y-1 pl-2">
                         <li><strong>3 Symbols</strong> in a line = 3 points</li>
@@ -163,11 +201,11 @@
                         <strong class="text-teal-300">⭐ Diagonal Bonus:</strong> The score for any sequence on the specially colored diagonal line (top-right to bottom-left) is <em>doubled!</em> This is key to a high score.
                     </p>
                     <p class="mt-3 p-3 bg-red-900/50 rounded-md border border-red-500/30">
-                        <strong class="text-red-300">Penalty:</strong> Be careful! Any row or column where it's <strong>no longer possible</strong> to form a 3-symbol sequence will receive a <strong>-5 point penalty</strong>.
+                        <strong class="text-red-300">⚠️ Penalty:</strong> Be careful! Any row or column where it's <strong>no longer possible</strong> to form a 3-symbol sequence will receive a <strong>-5 point penalty</strong>.
                     </p>
                 </div>
                 <div>
-                    <h3 class="font-bold text-white text-lg mb-1">End of the Game</h3>
+                    <h3 class="font-bold text-white text-lg mb-1">🏁 End of the Game</h3>
                     <p>The game ends when the entire grid is filled with symbols, or when there are no more valid moves left (i.e., no two adjacent empty squares remain on the board). Your final score is the sum of all your row scores, column scores, and the doubled diagonal score.</p>
                 </div>
             </div>
@@ -183,7 +221,6 @@
             <button id="play-again-btn" class="w-full mt-8 bg-[#00A896] text-white font-bold py-3 px-4 rounded-lg text-xl transition-all duration-200 ease-in-out hover:bg-[#00C2A9] hover:scale-105 active:scale-98">Play Again</button>
         </div>
     </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const ANIMAL_SYMBOLS = {
@@ -195,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'Monkey': '🐵'
     };
     const SYMBOLS = Object.values(ANIMAL_SYMBOLS);
-
     const SYMBOL_COLORS = {
         '🐶': 'text-[#f4a261]', // Pup - Sandy Brown
         '🐱': 'text-[#e76f51]', // Kitten - Burnt Sienna
@@ -204,14 +240,11 @@ document.addEventListener('DOMContentLoaded', () => {
         '🐼': 'text-[#A9A9A9]', // Panda - Dark Gray
         '🐵': 'text-[#967969]'  // Monkey - Fawn
     };
-
     const SCORING_RULES = { 7: 20, 6: 14, 5: 10, 4: 8, 3: 3 };
     const GRID_SIZE = 7;
     const MAX_TURNS = 24;
-
     // State variables
     let gameState, gridData, currentRoll, firstPlacementCell, turnCount, audioUnlocked, highScore;
-
     // DOM Elements
     const DOMElements = {
         gameBoard: document.getElementById('game-board'),
@@ -232,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
         highScoreModal: document.getElementById('high-score-modal'),
         playAgainBtn: document.getElementById('play-again-btn')
     };
-
     function initGame() {
         gameState = 'PRE_GAME';
         gridData = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
@@ -243,17 +275,17 @@ document.addEventListener('DOMContentLoaded', () => {
         DOMElements.highScore.textContent = highScore;
         DOMElements.gameOverModal.classList.remove('is-open');
         renderGrid();
-        
-        renderScorePlaceholders(); 
+
+        renderScorePlaceholders();
         renderControls();
-        
+
         DOMElements.totalScore.textContent = '0';
         DOMElements.rowsTotalScore.textContent = '0';
         DOMElements.colsTotalScore.textContent = '0';
         DOMElements.diagTotalScore.textContent = '0';
         DOMElements.turnCounter.textContent = `0 / ${MAX_TURNS}`;
     }
-    
+
     // --- RENDER FUNCTIONS ---
     function renderGrid() {
         DOMElements.gameBoard.innerHTML = '';
@@ -263,7 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.dataset.row = r;
                 cell.dataset.col = c;
                 let baseClasses = 'aspect-square w-full bg-[#232730] rounded-md md:rounded-lg flex items-center justify-center text-xl sm:text-2xl md:text-4xl font-bold transition-all duration-200';
-                if (r + c === GRID_SIZE - 1) baseClasses = baseClasses.replace('bg-[#232730]', 'bg-[#444c5a]');
+                if (r + c === GRID_SIZE - 1) {
+                    baseClasses = baseClasses.replace('bg-[#232730]', 'bg-[#444c5a] diagonal-cell');
+                }
                 if (r === 0 && c === 0 && gameState === 'PRE_GAME') baseClasses += ' border-2 border-[#00A896]';
                 else baseClasses += ' border border-[#3A414F]';
                 cell.className = baseClasses;
@@ -276,25 +310,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-
     function renderScorePlaceholders() {
         DOMElements.rowScoresDisplay.innerHTML = '';
         DOMElements.colScoresDisplay.innerHTML = '';
         for (let i = 0; i < GRID_SIZE; i++) {
-            DOMElements.rowScoresDisplay.innerHTML += `<div id="row-score-${i}" class="aspect-square w-full flex items-center justify-center font-semibold text-lg text-[#8A93A2] bg-[#232730] rounded-md">0</div>`;
-            DOMElements.colScoresDisplay.innerHTML += `<div id="col-score-${i}" class="aspect-square w-full flex items-center justify-center font-semibold text-lg text-[#8A93A2] bg-[#232730] rounded-md">0</div>`;
+            DOMElements.rowScoresDisplay.innerHTML += `<div id="row-score-${i}" class="aspect-square w-full flex items-center justify-center font-semibold text-lg text-[#8A93A2] bg-[#232730] rounded-lg">0</div>`;
+            DOMElements.colScoresDisplay.innerHTML += `<div id="col-score-${i}" class="aspect-square w-full flex items-center justify-center font-semibold text-lg text-[#8A93A2] bg-[#232730] rounded-lg">0</div>`;
         }
     }
-
     function renderControls() {
-        DOMElements.controlsArea.innerHTML = ''; 
+        DOMElements.controlsArea.innerHTML = '';
         if (gameState === 'PRE_GAME') {
             const container = document.createElement('div');
             const title = document.createElement('h2');
             title.className = 'text-sm font-medium text-[#8A93A2] uppercase tracking-widest text-center mb-2';
             title.textContent = 'Choose Start Symbol';
             container.appendChild(title);
-
             const selector = document.createElement('div');
             selector.className = 'grid grid-cols-6 gap-2 w-full';
             SYMBOLS.forEach(symbol => {
@@ -309,7 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const wrapper = document.createElement('div');
             wrapper.className = 'w-full flex flex-col items-center gap-4';
-
             const diceContainer = document.createElement('div');
             diceContainer.className = 'text-center';
             diceContainer.innerHTML = `<h2 class="text-sm font-medium text-[#8A93A2] uppercase tracking-widest mb-2">Your Roll</h2>`;
@@ -319,42 +349,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div id="dice-1" class="w-16 h-16 rounded-xl flex items-center justify-center text-4xl transition-all duration-200 shadow-lg">?</div>
                 <div id="dice-2" class="w-16 h-16 rounded-xl flex items-center justify-center text-4xl transition-all duration-200 shadow-lg">?</div>`;
             diceContainer.appendChild(diceFlex);
-
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'flex gap-2';
-            
+
             const rollBtn = document.createElement('button');
             rollBtn.id = 'roll-dice-btn';
             rollBtn.className = 'w-32 bg-[#00A896] text-white font-medium py-2 px-4 rounded-lg text-base transition-all duration-200 ease-in-out hover:bg-[#00C2A9] hover:scale-103 active:scale-98 disabled:bg-[#3A414F] disabled:text-[#8A93A2] disabled:cursor-not-allowed disabled:scale-100';
             rollBtn.textContent = 'Roll Dice';
             rollBtn.onclick = handleRollDice;
-
             const newGameBtn = document.createElement('button');
             newGameBtn.id = 'new-game-btn';
             newGameBtn.className = 'w-32 bg-[#3A414F] text-[#E1E3E6] font-medium py-2 px-4 rounded-lg text-base transition-all duration-200 ease-in-out hover:bg-[#4a5263]';
             newGameBtn.textContent = 'New Game';
             newGameBtn.onclick = initGame;
-
             buttonContainer.appendChild(rollBtn);
             buttonContainer.appendChild(newGameBtn);
-            
+
             wrapper.appendChild(diceContainer);
             wrapper.appendChild(buttonContainer);
             DOMElements.controlsArea.appendChild(wrapper);
-            
+
             updateControlsState();
         }
     }
-    
+
     function updateControlsState() {
         if (gameState === 'PRE_GAME') return;
         const rollBtn = document.getElementById('roll-dice-btn');
         if (rollBtn) rollBtn.disabled = gameState !== 'AWAITING_ROLL';
-        
+
         const dice1 = document.getElementById('dice-1');
         const dice2 = document.getElementById('dice-2');
         if (!dice1 || !dice2) return;
-        
+
         if (gameState === 'AWAITING_PLACEMENT') {
             dice1.textContent = currentRoll[0];
             dice1.className = `w-16 h-16 rounded-xl flex items-center justify-center text-4xl bg-[#232730] border-2 border-[#00A896] shadow-lg transition-all duration-200`;
@@ -367,7 +394,6 @@ document.addEventListener('DOMContentLoaded', () => {
             dice2.className = 'w-16 h-16 rounded-xl flex items-center justify-center text-4xl bg-[#1A1D24] border-2 border-[#3A414F] shadow-lg transition-all duration-200 text-[#8A93A2]';
         }
     }
-
     // --- GAME LOGIC & HANDLERS ---
     function handleSymbolSelect(symbol) {
         if (gameState !== 'PRE_GAME') return;
@@ -377,19 +403,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGrid();
         renderControls();
     }
-    
+
     function handleRollDice() {
         if (gameState !== 'AWAITING_ROLL') return;
         gameState = 'ANIMATING_ROLL';
         updateControlsState();
         playSound('sound-roll');
-
         const dice1El = document.getElementById('dice-1');
         const dice2El = document.getElementById('dice-2');
-
         dice1El.classList.add('dice-tumble');
         dice2El.classList.add('dice-tumble');
-
         setTimeout(() => {
             dice1El.classList.remove('dice-tumble');
             dice2El.classList.remove('dice-tumble');
@@ -398,16 +421,15 @@ document.addEventListener('DOMContentLoaded', () => {
             updateControlsState();
         }, 600);
     }
-    
+
     function handleCellClick(e) {
         const cell = e.target.closest('[data-row]');
         if (gameState !== 'AWAITING_PLACEMENT' || !cell) return;
         const row = parseInt(cell.dataset.row);
         const col = parseInt(cell.dataset.col);
-
         if (firstPlacementCell) {
             const { r, c } = firstPlacementCell;
-            
+
             if (r === row && c === col) {
                 gridData[r][c] = null;
                 firstPlacementCell = null;
@@ -415,26 +437,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderGrid();
                 return;
             }
-
             const isAdjacent = Math.abs(r - row) + Math.abs(c - col) === 1;
             if (isAdjacent && !gridData[row][col]) {
                 const longestSequenceBefore = findLongestSequence(gridData);
-                
+
                 gridData[row][col] = currentRoll[1];
                 firstPlacementCell = null;
                 turnCount++;
                 DOMElements.turnCounter.textContent = `${turnCount} / ${MAX_TURNS}`;
-                
+
                 clearHighlights();
                 renderGrid();
                 playSound('sound-place');
-                
+
                 const longestSequenceAfter = findLongestSequence(gridData);
-                
+
                 if (longestSequenceAfter > longestSequenceBefore && longestSequenceAfter >= 3) {
                     playSound(`sound-combo-${longestSequenceAfter}`);
+                    if (longestSequenceAfter >= 5) {
+                        createConfetti();
+                    }
                 }
-
                 processTurnEnd();
             }
         } else {
@@ -446,14 +469,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const c = col + dc;
                     return r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && !gridData[r][c];
                 });
-
                 if (!hasValidNeighbor) {
                     cell.classList.add('invalid-move-shake');
                     setTimeout(() => cell.classList.remove('invalid-move-shake'), 400);
                     return; // Abort placement
                 }
                 // --- END CHANGE ---
-
                 gridData[row][col] = currentRoll[0];
                 firstPlacementCell = { r: row, c: col };
                 renderGrid();
@@ -461,26 +482,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-    
+
     function processTurnEnd() {
         calculateAllScores();
-        
+
         const isGridFull = turnCount >= MAX_TURNS;
         if (isGridFull) {
             endGame("The grid is full!");
             return;
         }
-
         const noMovesLeft = !hasValidMoves(gridData);
         if (noMovesLeft) {
             endGame("No more valid moves!");
             return;
         }
-
         gameState = 'AWAITING_ROLL';
         renderControls();
     }
-    
+
     function endGame(reason = "") {
         gameState = 'GAME_OVER';
         const finalScore = parseInt(DOMElements.totalScore.textContent);
@@ -494,7 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
         DOMElements.highScoreModal.textContent = highScore;
         DOMElements.gameOverModal.classList.add('is-open');
     }
-
     // --- SCORING & UTILITIES ---
     function hasValidMoves(board) {
         for (let r = 0; r < GRID_SIZE; r++) {
@@ -507,7 +525,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return false;
     }
-
     function findLongestSequence(board) {
         let maxLen = 0;
         const checkLine = (line) => {
@@ -529,19 +546,17 @@ document.addEventListener('DOMContentLoaded', () => {
         maxLen = Math.max(maxLen, checkLine(Array.from({ length: GRID_SIZE }, (_, i) => board[i][GRID_SIZE - 1 - i])));
         return maxLen;
     }
-
     function isLineDead(line) {
         for (let i = 0; i <= line.length - 3; i++) {
             const window = line.slice(i, i + 3);
             const symbolsInWindow = window.filter(s => s !== null);
             const uniqueSymbols = new Set(symbolsInWindow);
             if (uniqueSymbols.size <= 1) {
-                return false; 
+                return false;
             }
         }
         return true;
     }
-
     function calculateLine(line) {
         let score = 0, foundSequence = false;
         let tempLine = [...line];
@@ -555,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        
+
         if (foundSequence) {
             return { score: score };
         } else {
@@ -566,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-    
+
     function calculateAllScores() {
         let totalScore = 0;
         let totalScores = { rows: 0, cols: 0, diag: 0 };
@@ -585,10 +600,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const { score: diagBaseScore } = calculateLine(diagLine);
         totalScores.diag = diagBaseScore * 2;
         totalScore = totalScores.rows + totalScores.cols + totalScores.diag;
-        DOMElements.totalScore.textContent = totalScore;
-        DOMElements.rowsTotalScore.textContent = totalScores.rows;
-        DOMElements.colsTotalScore.textContent = totalScores.cols;
-        DOMElements.diagTotalScore.textContent = totalScores.diag;
+
+        // --- NEW: Animate score roll-up ---
+        animateScoreRollUp(DOMElements.totalScore, totalScore);
+        animateScoreRollUp(DOMElements.rowsTotalScore, totalScores.rows);
+        animateScoreRollUp(DOMElements.colsTotalScore, totalScores.cols);
+        animateScoreRollUp(DOMElements.diagTotalScore, totalScores.diag);
+    }
+
+    // --- NEW: Animate score roll-up ---
+    function animateScoreRollUp(element, newValue) {
+        const oldValue = parseInt(element.textContent) || 0;
+        element.textContent = oldValue;
+        element.classList.add('score-roll-up');
+        setTimeout(() => {
+            element.textContent = newValue;
+            setTimeout(() => {
+                element.classList.remove('score-roll-up');
+            }, 500);
+        }, 100);
+    }
+
+    // --- NEW: Create confetti effect ---
+    function createConfetti() {
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.top = Math.random() * 20 + 'vh';
+            confetti.style.backgroundColor = `hsl(${Math.random() * 60 + 20}, 100%, 50%)`;
+            document.body.appendChild(confetti);
+
+            // Animate confetti
+            const animation = confetti.animate([
+                { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                { transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+            ], {
+                duration: 2000,
+                easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)'
+            });
+
+            animation.onfinish = () => confetti.remove();
+        }
     }
 
     function updateScoreElement(id, score) {
@@ -603,7 +656,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-
     function highlightValidMoves(row, col) {
         [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => {
             const r = row + dr, c = col + dc;
@@ -611,33 +663,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (cell && !gridData[r][c]) cell.classList.add('bg-[#3A414F]');
         });
     }
-
     function clearHighlights() {
         DOMElements.gameBoard.querySelectorAll('[data-row]').forEach(cell => {
              cell.classList.remove('bg-[#3A414F]');
         });
     }
-    
+
     function unlockAudio() {
         if (audioUnlocked) return;
         document.getElementById('audio-unlocker').play().then(() => audioUnlocked = true).catch(() => {});
     }
-
     function playSound(id) {
         if (!audioUnlocked) return;
         const sound = document.getElementById(id);
         if (sound) { sound.currentTime = 0; sound.play().catch(e => {}); }
     }
-
     // --- EVENT LISTENERS ---
     DOMElements.helpBtn.onclick = () => DOMElements.helpModal.classList.add('is-open');
     DOMElements.closeHelpBtn.onclick = () => DOMElements.helpModal.classList.remove('is-open');
     DOMElements.playAgainBtn.onclick = initGame;
     DOMElements.gameBoard.onclick = handleCellClick;
-    
+
     initGame();
 });
 </script>
-
 </body>
 </html>
