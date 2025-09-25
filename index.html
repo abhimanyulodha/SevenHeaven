@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seven Heaven Deluxe (Layout Fix)</title>
+    <title>Seven Heaven Deluxe (Updated)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,12 +81,12 @@
                  <button id="help-btn" class="w-10 h-10 bg-[#232730] rounded-full text-2xl font-bold flex items-center justify-center transition hover:bg-[#00A896]">?</button>
              </div>
              <div class="p-2 md:p-4 border-4 border-[#3A414F] rounded-xl bg-[#1A1D24]/50 backdrop-blur-sm">
-                <div class="grid grid-cols-8 gap-1.5 md:gap-2">
-                    <div id="game-board" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2"></div>
-                    <div id="row-scores-display" class="col-span-1 grid grid-rows-7 gap-1.5 md:gap-2"></div>
-                    <div id="col-scores-display" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2 mt-1.5 md:mt-2"></div>
-                    <div class="col-span-1"></div> </div>
-            </div>
+                 <div class="grid grid-cols-8 gap-1.5 md:gap-2">
+                     <div id="game-board" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2"></div>
+                     <div id="row-scores-display" class="col-span-1 grid grid-rows-7 gap-1.5 md:gap-2"></div>
+                     <div id="col-scores-display" class="col-span-7 grid grid-cols-7 gap-1.5 md:gap-2 mt-1.5 md:mt-2"></div>
+                     <div class="col-span-1"></div> </div>
+             </div>
         </div>
 
         <div class="w-full lg:w-1/3 flex flex-col gap-4 p-6 bg-[#232730] rounded-xl self-stretch">
@@ -96,7 +96,7 @@
              </div>
              
              <div id="controls-area" class="py-4 my-2 border-y-2 border-[#3A414F]">
-                 </div>
+             </div>
 
              <div class="text-center">
                  <h2 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Total Score</h2>
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.dataset.col = c;
                 let baseClasses = 'aspect-square w-full bg-[#232730] rounded-md md:rounded-lg flex items-center justify-center text-xl sm:text-2xl md:text-3xl font-bold transition-all duration-200';
                 if (r + c === GRID_SIZE - 1) baseClasses = baseClasses.replace('bg-[#232730]', 'bg-[#444c5a]');
-                if (r === 0 && c === 0) baseClasses += ' border-2 border-[#00A896]';
+                if (r === 0 && c === 0 && gameState === 'PRE_GAME') baseClasses += ' border-2 border-[#00A896]';
                 else baseClasses += ' border border-[#3A414F]';
                 cell.className = baseClasses;
                 const symbol = gridData[r][c];
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             diceContainer.className = 'text-center';
             diceContainer.innerHTML = `<h2 class="text-sm font-medium text-[#8A93A2] uppercase tracking-widest mb-2">Your Roll</h2>`;
             const diceFlex = document.createElement('div');
-            diceFlex.className = 'flex gap-2';
+            diceFlex.className = 'flex justify-center gap-2';
             diceFlex.innerHTML = `
                 <div id="dice-1" class="w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold">?</div>
                 <div id="dice-2" class="w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold">?</div>`;
@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     }
     
-    async function handleCellClick(e) {
+    function handleCellClick(e) {
         const cell = e.target.closest('[data-row]');
         if (gameState !== 'AWAITING_PLACEMENT' || !cell) return;
         const row = parseInt(cell.dataset.row);
@@ -373,15 +373,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (firstPlacementCell) {
             const { r, c } = firstPlacementCell;
+            
+            // **IMPROVEMENT 1: Allow undoing the first placement**
+            if (r === row && c === col) {
+                gridData[r][c] = null;
+                firstPlacementCell = null;
+                clearHighlights();
+                renderGrid();
+                return;
+            }
+
             const isAdjacent = Math.abs(r - row) + Math.abs(c - col) === 1;
             if (isAdjacent && !gridData[row][col]) {
+                const longestSequenceBefore = findLongestSequence(gridData);
+                
                 gridData[row][col] = currentRoll[1];
                 firstPlacementCell = null;
                 turnCount++;
                 clearHighlights();
                 renderGrid();
                 playSound('sound-place');
-                await processTurnEnd();
+                
+                const longestSequenceAfter = findLongestSequence(gridData);
+                
+                // **IMPROVEMENT 2: Play combo sound on new/extended sequence**
+                if (longestSequenceAfter > longestSequenceBefore && longestSequenceAfter >= 3) {
+                    playSound(`sound-combo-${longestSequenceAfter}`);
+                }
+
+                processTurnEnd();
             }
         } else {
             if (!gridData[row][col]) {
@@ -393,8 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function processTurnEnd() {
-        await calculateAllScores();
+    function processTurnEnd() {
+        calculateAllScores();
         if (turnCount >= (GRID_SIZE * GRID_SIZE - 1) / 2) {
             endGame();
         } else {
@@ -417,6 +437,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- SCORING & UTILITIES ---
+    // **NEW FUNCTION: Finds the longest sequence on the board**
+    function findLongestSequence(board) {
+        let maxLen = 0;
+        const checkLine = (line) => {
+            if (line.length === 0) return 0;
+            let max = 0, current = 0, lastSymbol = null;
+            for (const symbol of line) {
+                if (symbol && symbol === lastSymbol) {
+                    current++;
+                } else {
+                    max = Math.max(max, current);
+                    current = symbol ? 1 : 0;
+                    lastSymbol = symbol;
+                }
+            }
+            return Math.max(max, current);
+        };
+        for (let i = 0; i < GRID_SIZE; i++) maxLen = Math.max(maxLen, checkLine(board[i]));
+        for (let i = 0; i < GRID_SIZE; i++) maxLen = Math.max(maxLen, checkLine(board.map(row => row[i])));
+        maxLen = Math.max(maxLen, checkLine(Array.from({ length: GRID_SIZE }, (_, i) => board[i][GRID_SIZE - 1 - i])));
+        return maxLen;
+    }
+
     function calculateLine(line) {
         let score = 0, foundSequence = false;
         let tempLine = [...line];
@@ -433,31 +476,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return { score: foundSequence ? score : -5 };
     }
     
+    // **IMPROVEMENT 3: Simplified synchronous function**
     function calculateAllScores() {
-        return new Promise(resolve => {
-            let totalScore = 0;
-            let totalScores = { rows: 0, cols: 0, diag: 0 };
-            for (let i = 0; i < GRID_SIZE; i++) {
-                const { score } = calculateLine(gridData[i]);
-                updateScoreElement(`row-score-${i}`, score);
-                totalScores.rows += score;
-            }
-            for (let i = 0; i < GRID_SIZE; i++) {
-                const colLine = gridData.map(row => row[i]);
-                const { score } = calculateLine(colLine);
-                updateScoreElement(`col-score-${i}`, score);
-                totalScores.cols += score;
-            }
-            const diagLine = Array.from({ length: GRID_SIZE }, (_, i) => gridData[i][GRID_SIZE - 1 - i]);
-            const { score: diagBaseScore } = calculateLine(diagLine);
-            totalScores.diag = diagBaseScore * 2;
-            totalScore = totalScores.rows + totalScores.cols + totalScores.diag;
-            DOMElements.totalScore.textContent = totalScore;
-            DOMElements.rowsTotalScore.textContent = totalScores.rows;
-            DOMElements.colsTotalScore.textContent = totalScores.cols;
-            DOMElements.diagTotalScore.textContent = totalScores.diag;
-            resolve();
-        });
+        let totalScore = 0;
+        let totalScores = { rows: 0, cols: 0, diag: 0 };
+        for (let i = 0; i < GRID_SIZE; i++) {
+            const { score } = calculateLine(gridData[i]);
+            updateScoreElement(`row-score-${i}`, score);
+            totalScores.rows += score;
+        }
+        for (let i = 0; i < GRID_SIZE; i++) {
+            const colLine = gridData.map(row => row[i]);
+            const { score } = calculateLine(colLine);
+            updateScoreElement(`col-score-${i}`, score);
+            totalScores.cols += score;
+        }
+        const diagLine = Array.from({ length: GRID_SIZE }, (_, i) => gridData[i][GRID_SIZE - 1 - i]);
+        const { score: diagBaseScore } = calculateLine(diagLine);
+        totalScores.diag = diagBaseScore * 2;
+        totalScore = totalScores.rows + totalScores.cols + totalScores.diag;
+        DOMElements.totalScore.textContent = totalScore;
+        DOMElements.rowsTotalScore.textContent = totalScores.rows;
+        DOMElements.colsTotalScore.textContent = totalScores.cols;
+        DOMElements.diagTotalScore.textContent = totalScores.diag;
     }
 
     function updateScoreElement(id, score) {
@@ -472,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function highlightValidMoves(row, col) {
-        [[ -1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => {
+        [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => {
             const r = row + dr, c = col + dc;
             const cell = DOMElements.gameBoard.querySelector(`[data-row='${r}'][data-col='${c}']`);
             if (cell && !gridData[r][c]) cell.classList.add('bg-[#3A414F]');
