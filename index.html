@@ -36,11 +36,14 @@
             100% { opacity: 1; transform: scale(1); }
         }
 
-        .dice-roll { animation: dice-roll 0.5s ease-out; }
-        @keyframes dice-roll {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(-15deg) scale(1.1); }
-            75% { transform: rotate(15deg) scale(1.1); }
+        /* --- CHANGE: Replaced dice-roll with dice-tumble animation --- */
+        .dice-tumble { animation: dice-tumble 0.6s ease-in-out; }
+        @keyframes dice-tumble {
+            0%   { transform: rotate(0deg) scale(1); }
+            20%  { transform: rotate(-90deg) scale(1.1); }
+            40%  { transform: rotate(-180deg) scale(1); }
+            60%  { transform: rotate(-270deg) scale(1.1); }
+            100% { transform: rotate(-360deg) scale(1); }
         }
         
         .combo-flash { animation: combo-flash 0.8s ease-out; }
@@ -117,6 +120,10 @@
                      <p id="diag-total-score" class="text-2xl font-semibold">0</p>
                  </div>
              </div>
+             <div class="text-center mt-4 border-t-2 border-[#3A414F] pt-4">
+                <h3 class="text-sm font-semibold text-[#8A93A2] uppercase tracking-widest">Turn</h3>
+                <p id="turn-counter" class="text-2xl font-semibold">0 / 24</p>
+            </div>
         </div>
     </main>
 
@@ -181,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const SYMBOL_COLORS = {'@': 'text-[#E6C340]', '^': 'text-[#A484E9]', '+': 'text-[#4FB477]', '*': 'text-[#E36A7F]', '&': 'text-[#4EADE5]', '~': 'text-[#E38A5F]'};
     const SCORING_RULES = { 7: 20, 6: 14, 5: 10, 4: 8, 3: 3 };
     const GRID_SIZE = 7;
+    const MAX_TURNS = 24;
 
     // State variables
     let gameState, gridData, currentRoll, firstPlacementCell, turnCount, audioUnlocked, highScore;
@@ -196,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rowsTotalScore: document.getElementById('rows-total-score'),
         colsTotalScore: document.getElementById('cols-total-score'),
         diagTotalScore: document.getElementById('diag-total-score'),
+        turnCounter: document.getElementById('turn-counter'),
         helpBtn: document.getElementById('help-btn'),
         helpModal: document.getElementById('help-modal'),
         closeHelpBtn: document.getElementById('close-help-btn'),
@@ -223,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOMElements.rowsTotalScore.textContent = '0';
         DOMElements.colsTotalScore.textContent = '0';
         DOMElements.diagTotalScore.textContent = '0';
+        DOMElements.turnCounter.textContent = `0 / ${MAX_TURNS}`;
     }
     
     // --- RENDER FUNCTIONS ---
@@ -287,9 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
             diceContainer.innerHTML = `<h2 class="text-sm font-medium text-[#8A93A2] uppercase tracking-widest mb-2">Your Roll</h2>`;
             const diceFlex = document.createElement('div');
             diceFlex.className = 'flex justify-center gap-2';
+            // --- CHANGE: Updated dice HTML for easier styling ---
             diceFlex.innerHTML = `
-                <div id="dice-1" class="w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold">?</div>
-                <div id="dice-2" class="w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold">?</div>`;
+                <div id="dice-1" class="w-16 h-16 rounded-xl flex items-center justify-center text-3xl font-bold bg-[#1A1D24] border-2 border-[#3A414F] shadow-lg transition-all">?</div>
+                <div id="dice-2" class="w-16 h-16 rounded-xl flex items-center justify-center text-3xl font-bold bg-[#1A1D24] border-2 border-[#3A414F] shadow-lg transition-all">?</div>`;
             diceContainer.appendChild(diceFlex);
 
             const buttonContainer = document.createElement('div');
@@ -327,16 +338,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const dice2 = document.getElementById('dice-2');
         if (!dice1 || !dice2) return;
         
+        // --- CHANGE: Updated dice styling via class manipulation ---
         if (gameState === 'AWAITING_PLACEMENT') {
             dice1.textContent = currentRoll[0];
-            dice1.className = `w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold border-2 border-[#00A896] ${SYMBOL_COLORS[currentRoll[0]]}`;
+            dice1.className = `w-16 h-16 rounded-xl flex items-center justify-center text-3xl font-bold bg-[#232730] border-2 border-[#00A896] shadow-lg transition-all ${SYMBOL_COLORS[currentRoll[0]]}`;
             dice2.textContent = currentRoll[1];
-            dice2.className = `w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold border-2 border-[#00A896] ${SYMBOL_COLORS[currentRoll[1]]}`;
+            dice2.className = `w-16 h-16 rounded-xl flex items-center justify-center text-3xl font-bold bg-[#232730] border-2 border-[#00A896] shadow-lg transition-all ${SYMBOL_COLORS[currentRoll[1]]}`;
         } else {
             dice1.textContent = '?';
-            dice1.className = 'w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold';
+            dice1.className = 'w-16 h-16 rounded-xl flex items-center justify-center text-3xl font-bold bg-[#1A1D24] border-2 border-[#3A414F] shadow-lg transition-all';
             dice2.textContent = '?';
-            dice2.className = 'w-16 h-16 bg-[#1A1D24] rounded-xl flex items-center justify-center text-3xl font-bold';
+            dice2.className = 'w-16 h-16 rounded-xl flex items-center justify-center text-3xl font-bold bg-[#1A1D24] border-2 border-[#3A414F] shadow-lg transition-all';
         }
     }
 
@@ -358,16 +370,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const dice1El = document.getElementById('dice-1');
         const dice2El = document.getElementById('dice-2');
-        dice1El.classList.add('dice-roll');
-        dice2El.classList.add('dice-roll');
+        // --- CHANGE: Applying new tumble animation ---
+        dice1El.classList.add('dice-tumble');
+        dice2El.classList.add('dice-tumble');
 
+        // --- CHANGE: Adjusted timeout to match animation duration ---
         setTimeout(() => {
-            dice1El.classList.remove('dice-roll');
-            dice2El.classList.remove('dice-roll');
+            dice1El.classList.remove('dice-tumble');
+            dice2El.classList.remove('dice-tumble');
             currentRoll = [SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)], SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]];
             gameState = 'AWAITING_PLACEMENT';
             updateControlsState();
-        }, 500);
+        }, 600);
     }
     
     function handleCellClick(e) {
@@ -394,6 +408,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 gridData[row][col] = currentRoll[1];
                 firstPlacementCell = null;
                 turnCount++;
+                // --- CHANGE: Update turn counter display ---
+                DOMElements.turnCounter.textContent = `${turnCount} / ${MAX_TURNS}`;
+                
                 clearHighlights();
                 renderGrid();
                 playSound('sound-place');
@@ -419,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function processTurnEnd() {
         calculateAllScores();
         
-        const isGridFull = turnCount >= (GRID_SIZE * GRID_SIZE - 1) / 2;
+        const isGridFull = turnCount >= MAX_TURNS;
         if (isGridFull) {
             endGame("The grid is full!");
             return;
@@ -486,26 +503,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return maxLen;
     }
 
-    // --- CHANGE: NEW HELPER FUNCTION TO CHECK IF A LINE IS "DEAD" ---
     function isLineDead(line) {
-        // A line is "dead" if it's impossible to form a 3-symbol sequence.
-        // We check every possible 3-cell window.
         for (let i = 0; i <= line.length - 3; i++) {
             const window = line.slice(i, i + 3);
             const symbolsInWindow = window.filter(s => s !== null);
-            
-            // If the window is empty or contains symbols of only one type, 
-            // a sequence is still possible in this window. The line is not dead.
             const uniqueSymbols = new Set(symbolsInWindow);
             if (uniqueSymbols.size <= 1) {
                 return false; 
             }
         }
-        // If we checked all windows and none had potential, the line is dead.
         return true;
     }
 
-    // --- CHANGE: UPDATED SCORING LOGIC ---
     function calculateLine(line) {
         let score = 0, foundSequence = false;
         let tempLine = [...line];
@@ -523,11 +532,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (foundSequence) {
             return { score: score };
         } else {
-            // If no sequence, check if the line is dead before penalizing.
             if (isLineDead(line)) {
                 return { score: -5 };
             } else {
-                return { score: 0 }; // Otherwise, the score is 0 for now.
+                return { score: 0 };
             }
         }
     }
@@ -548,7 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const diagLine = Array.from({ length: GRID_SIZE }, (_, i) => gridData[i][GRID_SIZE - 1 - i]);
         const { score: diagBaseScore } = calculateLine(diagLine);
-        // --- CHANGE: Correctly double the diagonal score (both positive and negative) ---
         totalScores.diag = diagBaseScore * 2;
         totalScore = totalScores.rows + totalScores.cols + totalScores.diag;
         DOMElements.totalScore.textContent = totalScore;
