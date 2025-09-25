@@ -177,7 +177,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CHANGE: Replaced Zebra and Giraffe with Panda and Monkey for visual consistency ---
     const ANIMAL_SYMBOLS = {
         'Pup': '🐶',
         'Kitten': '🐱',
@@ -188,12 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const SYMBOLS = Object.values(ANIMAL_SYMBOLS);
 
-    // --- CHANGE: Updated color palette to match the new animals ---
+    // --- CHANGE: Assigned a unique color to the Tiger ---
     const SYMBOL_COLORS = {
         '🐶': 'text-[#f4a261]', // Pup - Sandy Brown
         '🐱': 'text-[#e76f51]', // Kitten - Burnt Sienna
         '🐮': 'text-[#e9c46a]', // Calf - Saffron
-        '🐯': 'text-[#f4a261]', // Tiger - Sandy Brown
+        '🐯': 'text-[#fb923c]', // Tiger - Bright Orange
         '🐼': 'text-[#A9A9A9]', // Panda - Dark Gray
         '🐵': 'text-[#967969]'  // Monkey - Fawn
     };
@@ -263,7 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const symbol = gridData[r][c];
                 if (symbol) {
                     cell.textContent = symbol;
-                    cell.classList.add('pop-in');
+                    // --- CHANGE: Applied the correct color class to the grid symbol ---
+                    cell.classList.add(SYMBOL_COLORS[symbol], 'pop-in');
                 }
                 DOMElements.gameBoard.appendChild(cell);
             }
