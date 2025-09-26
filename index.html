@@ -124,7 +124,7 @@
         <div class="w-full lg:w-2/3 flex flex-col gap-4">
             <div class="flex justify-between items-center">
                 <h1 class="text-5xl font-bold text-white">Seven Heaven</h1>
-                <button id="help-btn" class="w-10 h-10 bg-[#232730] rounded-full text-2xl font-bold flex items-center justify-center transition hover:bg-[#00A896]">?</button>
+                <button id="help-btn" class="w-24 h-10 bg-[#232730] rounded-lg text-sm font-bold flex items-center justify-center transition hover:bg-[#00A896]">RULES</button>
             </div>
             <div class="p-2 md:p-4 border-4 border-[#3A414F] rounded-xl bg-[#1A1D24]/50 backdrop-blur-sm">
                 <div class="grid grid-cols-8 gap-1.5 md:gap-2">
@@ -212,7 +212,8 @@
             </div>
     </div>
     <div id="game-over-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50">
-        <div class="modal-content w-full max-w-md text-center bg-[#1A1D24] p-8 rounded-xl border-2 border-[#00A896] transform scale-95 -translate-y-4">
+        <div class="modal-content w-full max-w-md text-center bg-[#1A1D24] p-8 rounded-xl border-2 border-[#00A896] transform scale-95 -translate-y-4 relative">
+            <button id="close-game-over-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full text-lg transition hover:bg-[#3A414F] flex items-center justify-center">X</button>
             <h2 class="text-4xl font-bold text-[#00A896]">Game Over!</h2>
             <p id="game-over-reason" class="text-sm text-[#8A93A2] mt-1"></p>
             <p class="text-[#8A93A2] mt-4">Your final score is:</p>
@@ -261,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         helpModal: document.getElementById('help-modal'),
         closeHelpBtn: document.getElementById('close-help-btn'),
         gameOverModal: document.getElementById('game-over-modal'),
+        closeGameOverBtn: document.getElementById('close-game-over-btn'),
         finalScoreModal: document.getElementById('final-score-modal'),
         highScoreModal: document.getElementById('high-score-modal'),
         playAgainBtn: document.getElementById('play-again-btn')
@@ -502,6 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function endGame(reason = "") {
         gameState = 'GAME_OVER';
+        calculateAllScores(); // Recalculate scores to ensure accuracy
         const finalScore = parseInt(DOMElements.totalScore.textContent);
         if (finalScore > highScore) {
             highScore = finalScore;
@@ -509,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
             DOMElements.highScore.textContent = highScore;
         }
         document.getElementById('game-over-reason').textContent = reason;
-        DOMElements.finalScoreModal.textContent = finalScore;
+        DOMElements.finalScoreModal.textContent = finalScore; // Use the same finalScore as the UI
         DOMElements.highScoreModal.textContent = highScore;
         DOMElements.gameOverModal.classList.add('is-open');
     }
@@ -601,11 +604,11 @@ document.addEventListener('DOMContentLoaded', () => {
         totalScores.diag = diagBaseScore * 2;
         totalScore = totalScores.rows + totalScores.cols + totalScores.diag;
 
-        // --- NEW: Animate score roll-up ---
-        animateScoreRollUp(DOMElements.totalScore, totalScore);
-        animateScoreRollUp(DOMElements.rowsTotalScore, totalScores.rows);
-        animateScoreRollUp(DOMElements.colsTotalScore, totalScores.cols);
-        animateScoreRollUp(DOMElements.diagTotalScore, totalScores.diag);
+        // Update the UI with the calculated scores
+        DOMElements.totalScore.textContent = totalScore;
+        DOMElements.rowsTotalScore.textContent = totalScores.rows;
+        DOMElements.colsTotalScore.textContent = totalScores.cols;
+        DOMElements.diagTotalScore.textContent = totalScores.diag;
     }
 
     // --- NEW: Animate score roll-up ---
@@ -681,6 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- EVENT LISTENERS ---
     DOMElements.helpBtn.onclick = () => DOMElements.helpModal.classList.add('is-open');
     DOMElements.closeHelpBtn.onclick = () => DOMElements.helpModal.classList.remove('is-open');
+    DOMElements.closeGameOverBtn.onclick = () => DOMElements.gameOverModal.classList.remove('is-open');
     DOMElements.playAgainBtn.onclick = initGame;
     DOMElements.gameBoard.onclick = handleCellClick;
 
